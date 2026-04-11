@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.klu.artt_gallery.dto.*;
 import com.klu.artt_gallery.entity.*;
 import com.klu.artt_gallery.repository.UserRepository;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -32,33 +33,48 @@ public class AuthService {
             }
         }
 
+        // Generate a unique verification token
+        String token = UUID.randomUUID().toString();
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(role)
+                .emailVerified(false)          // NOT verified yet
+                .verificationToken(token)      // store the token
                 .build();
 
         User saved = userRepository.save(user);
 
-        // Send welcome email
-        try {
-            String subject = "Welcome to ArtGallery!";
-            String body = "Hi " + saved.getName() + ",\n\n"
-                    + "Welcome to ArtGallery — your virtual art museum!\n\n"
-                    + "Your account has been created successfully.\n"
-                    + "Role: " + saved.getRole().name() + "\n"
-                    + "Email: " + saved.getEmail() + "\n\n"
-                    + "You can now log in at: http://localhost:5173/login\n\n"
-                    + "Thank you for joining us!\n"
-                    + "— The ArtGallery Team";
-            emailService.sendEmail(saved.getEmail(), subject, body);
-        } catch (Exception e) {
-            // Email failure should not break registration
-            System.err.println("Warning: Could not send welcome email - " + e.getMessage());
+        // Send verification email
+        String verifyLink = "http://localhost:5173/verify-email?token=" + token;
+        String subject = "Verify your ArtGallery email address";
+        String body = "Hi " + saved.getName() + ",\n\n"
+                + "Thank you for registering at ArtGallery!\n\n"
+                + "Please click the link below to verify your email address:\n"
+                + verifyLink + "\n\n"
+                + "This link will activate your account. If you did not register, ignore this email.\n\n"
+                + "— The ArtGallery Team";
+        emailService.sendEmail(saved.getEmail(), subject, body);
+
+        return new AuthResponse("Registration successful! Please check your email to verify your account.",
+                saved.getId(), saved.getName(), saved.getEmail(), saved.getRole().name());
+    }
+
+    // Called when user clicks the link in email
+    public String verifyEmail(String token) {
+        User user = userRepository.findByVerificationToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired verification link."));
+
+        if (user.isEmailVerified()) {
+            return "Email already verified. You can log in.";
         }
 
-        return new AuthResponse("User Registered Successfully", saved.getId(), saved.getName(), saved.getEmail(), saved.getRole().name());
+        user.setEmailVerified(true);
+        user.setVerificationToken(null);   // clear token after use
+        userRepository.save(user);
+        return "Email verified successfully! You can now log in.";
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -69,6 +85,12 @@ public class AuthService {
             throw new RuntimeException("Invalid password");
         }
 
+        // BLOCK LOGIN if email is not verified
+        if (!user.isEmailVerified()) {
+            throw new RuntimeException("EMAIL_NOT_VERIFIED");
+        }
+
         return new AuthResponse("Login Successful", user.getId(), user.getName(), user.getEmail(), user.getRole().name());
     }
 }
+

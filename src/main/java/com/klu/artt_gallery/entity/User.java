@@ -1,4 +1,4 @@
-﻿package com.klu.artt_gallery.entity;
+package com.klu.artt_gallery.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,4 +25,11 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    // Email verification fields
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @JsonIgnore
+    private String verificationToken;
 }

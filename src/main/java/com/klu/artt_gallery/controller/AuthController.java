@@ -1,4 +1,4 @@
-﻿package com.klu.artt_gallery.controller;
+package com.klu.artt_gallery.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +20,17 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage(), null, null, null, null));
+        }
+    }
+
+    // User clicks this link from their email → verifies account
+    @GetMapping("/verify-email")
+    public ResponseEntity<String> verifyEmail(@RequestParam String token) {
+        try {
+            String result = authService.verifyEmail(token);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

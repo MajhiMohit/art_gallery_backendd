@@ -43,4 +43,10 @@ public class AuthController {
             return ResponseEntity.status(401).body(new AuthResponse(e.getMessage(), null, null, null, null));
         }
     }
+
+    // Railway healthcheck endpoint
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("OK");
+    }
 }

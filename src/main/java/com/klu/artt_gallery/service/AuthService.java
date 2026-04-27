@@ -18,8 +18,6 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
-    // Reads FRONTEND_URL env var on Railway (set to Vercel URL)
-    // Falls back to localhost:5173 for local development
     @Value("${FRONTEND_URL:http://localhost:5173}")
     private String frontendUrl;
 
@@ -39,7 +37,6 @@ public class AuthService {
             }
         }
 
-        // Generate a unique verification token
         String token = UUID.randomUUID().toString();
 
         User user = User.builder()
@@ -47,27 +44,30 @@ public class AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(role)
-                .emailVerified(true)           // Auto-verify so login works immediately
+                .emailVerified(false)
                 .verificationToken(token)
                 .build();
 
         User saved = userRepository.save(user);
 
-        // Send verification email async (non-blocking) — demonstrates email feature
+        // Send verification email (async, non-blocking)
         String verifyLink = frontendUrl + "/verify-email?token=" + token;
-        String subject = "Welcome to ArtGallery!";
+        String subject = "Verify your ArtGallery email address";
         String body = "Hi " + saved.getName() + ",\n\n"
-                + "Welcome to ArtGallery! Your account has been created successfully.\n\n"
-                + "Role: " + saved.getRole().name() + "\n\n"
-                + "You can log in directly at: " + frontendUrl + "/login\n\n"
+                + "Thank you for registering at ArtGallery!\n\n"
+                + "Please click the link below to verify your email address:\n"
+                + verifyLink + "\n\n"
+                + "This link will activate your account.\n\n"
+                + "If you did not register, please ignore this email.\n\n"
                 + "— The ArtGallery Team";
         emailService.sendEmail(saved.getEmail(), subject, body);
 
-        return new AuthResponse("Registration successful! You can now log in.",
-                saved.getId(), saved.getName(), saved.getEmail(), saved.getRole().name());
+        return new AuthResponse(
+                "Registration successful! Please check your email to verify your account.",
+                saved.getId(), saved.getName(), saved.getEmail(), saved.getRole().name()
+        );
     }
 
-    // Called when user clicks the link in email
     public String verifyEmail(String token) {
         User user = userRepository.findByVerificationToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid or expired verification link."));
@@ -90,7 +90,12 @@ public class AuthService {
             throw new RuntimeException("Invalid password");
         }
 
-        return new AuthResponse("Login Successful", user.getId(), user.getName(), user.getEmail(), user.getRole().name());
+        // Block unverified users from logging in
+        if (!user.isEmailVerified()) {
+            throw new RuntimeException("EMAIL_NOT_VERIFIED");
+        }
+
+        return new AuthResponse("Login Successful",
+                user.getId(), user.getName(), user.getEmail(), user.getRole().name());
     }
 }
-

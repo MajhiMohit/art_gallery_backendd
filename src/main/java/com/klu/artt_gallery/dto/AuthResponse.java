@@ -1,16 +1,16 @@
-﻿package com.klu.artt_gallery.dto;
+package com.klu.artt_gallery.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class AuthResponse {
-    private String message;
-    private Long id;
-    private String name;
-    private String email;
-    private String role;
-}
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public class AuthResponse {
+            private String message;
+            private Long id;
+            private String name;
+            private String email;
+            private String role;
+    }

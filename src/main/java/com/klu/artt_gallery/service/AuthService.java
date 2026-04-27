@@ -47,24 +47,23 @@ public class AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(role)
-                .emailVerified(false)          // NOT verified yet
-                .verificationToken(token)      // store the token
+                .emailVerified(true)           // Auto-verify so login works immediately
+                .verificationToken(token)
                 .build();
 
         User saved = userRepository.save(user);
 
-        // Send verification email — link points to deployed Vercel frontend
+        // Send verification email async (non-blocking) — demonstrates email feature
         String verifyLink = frontendUrl + "/verify-email?token=" + token;
-        String subject = "Verify your ArtGallery email address";
+        String subject = "Welcome to ArtGallery!";
         String body = "Hi " + saved.getName() + ",\n\n"
-                + "Thank you for registering at ArtGallery!\n\n"
-                + "Please click the link below to verify your email address:\n"
-                + verifyLink + "\n\n"
-                + "This link will activate your account. If you did not register, ignore this email.\n\n"
+                + "Welcome to ArtGallery! Your account has been created successfully.\n\n"
+                + "Role: " + saved.getRole().name() + "\n\n"
+                + "You can log in directly at: " + frontendUrl + "/login\n\n"
                 + "— The ArtGallery Team";
         emailService.sendEmail(saved.getEmail(), subject, body);
 
-        return new AuthResponse("Registration successful! Please check your email to verify your account.",
+        return new AuthResponse("Registration successful! You can now log in.",
                 saved.getId(), saved.getName(), saved.getEmail(), saved.getRole().name());
     }
 
@@ -78,7 +77,7 @@ public class AuthService {
         }
 
         user.setEmailVerified(true);
-        user.setVerificationToken(null);   // clear token after use
+        user.setVerificationToken(null);
         userRepository.save(user);
         return "Email verified successfully! You can now log in.";
     }
@@ -89,11 +88,6 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid password");
-        }
-
-        // BLOCK LOGIN if email is not verified
-        if (!user.isEmailVerified()) {
-            throw new RuntimeException("EMAIL_NOT_VERIFIED");
         }
 
         return new AuthResponse("Login Successful", user.getId(), user.getName(), user.getEmail(), user.getRole().name());

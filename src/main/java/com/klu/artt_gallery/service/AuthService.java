@@ -1,6 +1,7 @@
 package com.klu.artt_gallery.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.klu.artt_gallery.dto.*;
@@ -16,6 +17,11 @@ public class AuthService {
 
     @Autowired
     private EmailService emailService;
+
+    // Reads FRONTEND_URL env var on Railway (set to Vercel URL)
+    // Falls back to localhost:5173 for local development
+    @Value("${FRONTEND_URL:http://localhost:5173}")
+    private String frontendUrl;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -47,8 +53,8 @@ public class AuthService {
 
         User saved = userRepository.save(user);
 
-        // Send verification email
-        String verifyLink = "http://localhost:5173/verify-email?token=" + token;
+        // Send verification email — link points to deployed Vercel frontend
+        String verifyLink = frontendUrl + "/verify-email?token=" + token;
         String subject = "Verify your ArtGallery email address";
         String body = "Hi " + saved.getName() + ",\n\n"
                 + "Thank you for registering at ArtGallery!\n\n"

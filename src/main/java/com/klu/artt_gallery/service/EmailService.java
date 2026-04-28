@@ -23,7 +23,9 @@ import java.time.Duration;
 @Service
 public class EmailService {
 
-    @Value("${BREVO_API_KEY}")
+    // Set BREVO_API_KEY as environment variable on Railway
+    // Locally: email is skipped gracefully if key is not set
+    @Value("${BREVO_API_KEY:NOT_CONFIGURED}")
     private String apiKey;
 
     // Sender email must match a verified sender in your Brevo account

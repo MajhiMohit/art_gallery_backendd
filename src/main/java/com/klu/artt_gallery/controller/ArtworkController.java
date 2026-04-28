@@ -10,7 +10,6 @@ import com.klu.artt_gallery.service.ArtworkService;
 
 @RestController
 @RequestMapping("/api/artworks")
-@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*")
 public class ArtworkController {
 
     @Autowired

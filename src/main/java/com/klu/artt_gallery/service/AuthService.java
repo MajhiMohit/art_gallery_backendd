@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.klu.artt_gallery.dto.*;
 import com.klu.artt_gallery.entity.*;
 import com.klu.artt_gallery.repository.UserRepository;
+import com.klu.artt_gallery.util.JwtUtil;
 import java.util.UUID;
 
 @Service
@@ -17,6 +18,9 @@ public class AuthService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @Value("${FRONTEND_URL:https://art-gallery-new-seven.vercel.app}")
     private String frontendUrl;
@@ -85,7 +89,10 @@ public class AuthService {
             throw new RuntimeException("Invalid password");
         }
 
+        // Generate JWT token
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+
         return new AuthResponse("Login Successful",
-                user.getId(), user.getName(), user.getEmail(), user.getRole().name());
+                user.getId(), user.getName(), user.getEmail(), user.getRole().name(), token);
     }
 }

@@ -26,7 +26,8 @@ public class CorsConfig {
             frontendUrl,
             "http://localhost:5173",
             "http://localhost:3000",
-            "https://*.vercel.app"
+            "https://*.vercel.app",
+            "https://*.onrender.com"
         ));
 
         config.setAllowedHeaders(List.of("*"));
